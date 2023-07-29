@@ -11,6 +11,7 @@ import { UserResolver } from "./resolvers/user";
 import RedisStore from "connect-redis";
 import session from "express-session";
 import { createClient } from "redis";
+import cors from "cors";
 
 const main = async () => {
   const orm = await MikroORM.init(microConfig);
@@ -29,7 +30,14 @@ const main = async () => {
     disableTouch: true,
   });
 
-  app.set("trust proxy", !__prod__);
+  app.use(
+    cors({
+      origin: ["https://studio.apollographql.com", "http://localhost:3000"],
+      credentials: true,
+    })
+  );
+
+  // app.set("trust proxy", !__prod__); // for Apollo
 
   // Initialize sesssion storage.
   app.use(
@@ -39,8 +47,8 @@ const main = async () => {
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
         httpOnly: true,
-        sameSite: "none", // csrf
-        secure: true, // cookie only works in https
+        sameSite: "lax", // csrf -> none, lax
+        secure: __prod__, // cookie only works in https -> true, __prod__
       },
       resave: false, // required: force lightweight session keep alive (touch)
       saveUninitialized: false, // recommended: only save session when data exists
@@ -60,10 +68,7 @@ const main = async () => {
 
   apolloServer.applyMiddleware({
     app,
-    cors: {
-      origin: "https://studio.apollographql.com",
-      credentials: true,
-    },
+    cors: false,
   });
 
   app.listen(4000, () => {

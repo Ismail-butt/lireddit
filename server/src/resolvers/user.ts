@@ -83,8 +83,10 @@ export class UserResolver {
     });
     try {
       await em.persistAndFlush(user);
-    } catch (error) {
-      if (error.code === "23505" || error.details.includes("already exists")) {
+    } catch (err) {
+      //|| err.detail.includes("already exists")) {
+      // duplicate username error
+      if (err.code === "23505") {
         return {
           errors: [
             {
@@ -101,7 +103,9 @@ export class UserResolver {
     // keep them logged in
     req.session.userId = user.id;
 
-    return { user };
+    return {
+      user,
+    };
   }
 
   @Mutation(() => UserResponse)
